@@ -1,0 +1,28 @@
+{
+    "extends": [
+    "react-app",
+    "react-app/jest",
+    "google"
+  ],
+  "rules": {
+    "no-unused-vars": "off",
+    "linebreak-style": "off",
+    "max-len": "off",
+    "require-jsdoc": "off",
+    "sort-imports": [
+      "error",
+      {
+        "ignoreCase": true,
+        "ignoreDeclarationSort": false,
+        "ignoreMemberSort": false,
+        "memberSyntaxSortOrder": [
+          "none",
+          "all",
+          "multiple",
+          "single"
+        ],
+        "allowSeparatedGroups": false
+      }
+    ]
+  }
+}
