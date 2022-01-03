@@ -1,6 +1,6 @@
 import '../styles/text.scss';
 
-import {Col, Container, Nav, Row, Tab, Tabs, ToggleButton, ToggleButtonGroup} from 'react-bootstrap';
+import {Col, Container, Nav, Row, Tab} from 'react-bootstrap';
 import React, {useState} from 'react';
 import {getText} from '../data';
 import Segment from './Segment';
@@ -11,13 +11,9 @@ export default function Text() {
   const params = useParams();
   const [textState, setTextState] = useState(getText(params.projectName, params.textName));
   const [toolState, setToolState] = useState(null);
-  //   const handleChange = (e) => {
-  //     const {name, value} = e.target;
-  //     setText((prevState) => ({
-  //       ...prevState,
-  //       [name]: value,
-  //     }));
-  //   };
+  const [allowCrossSpace, setallowCrossSpaceState] = useState(false);
+
+  // TODO: Up next: make everything work when "allowCrossSpace === false"
 
   const onCutSelect = (segId, segSide, segTokens) => {
     setTextState((prevState) => {
@@ -66,7 +62,7 @@ export default function Text() {
             <Container fluid className="text src">
               {
                 textState.translations.map((translation, translationId) =>
-                  <Segment key={translationId} id={translationId} side="src" tokens={translation.srcTokens} onCutSelect={onCutSelect} />
+                  <Segment key={translationId} id={translationId} side="src" tokens={translation.srcTokens} onCutSelect={onCutSelect} allowCrossSpace={allowCrossSpace} />
                 )
               }
             </Container>
@@ -76,7 +72,7 @@ export default function Text() {
             <Container fluid className="text tgt">
               {
                 textState.translations.map((translation, translationId) =>
-                  <Segment key={translationId} id={translationId} side="tgt" tokens={translation.tgtTokens} onCutSelect={onCutSelect} />
+                  <Segment key={translationId} id={translationId} side="tgt" tokens={translation.tgtTokens} onCutSelect={onCutSelect} allowCrossSpace={allowCrossSpace} />
                 )
               }
             </Container>
@@ -90,10 +86,10 @@ export default function Text() {
                   <Row key={translationId}>
                     <Col>
 
-                      {translation.srcTokens && <Segment key={translationId} id={translationId} side="src" tokens={translation.srcTokens} onCutSelect={onCutSelect} />}
+                      {translation.srcTokens && <Segment key={translationId} id={translationId} side="src" tokens={translation.srcTokens} onCutSelect={onCutSelect} allowCrossSpace={allowCrossSpace} />}
                     </Col>
                     <Col>
-                      {translation.tgtTokens && <Segment key={translationId} id={translationId} side="tgt" tokens={translation.tgtTokens} onCutSelect={onCutSelect} />}
+                      {translation.tgtTokens && <Segment key={translationId} id={translationId} side="tgt" tokens={translation.tgtTokens} onCutSelect={onCutSelect} allowCrossSpace={allowCrossSpace} />}
                     </Col>
                   </Row>
                 )

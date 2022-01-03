@@ -2,9 +2,49 @@
   font-size: 1.2rem;
   margin-top: 1rem;
   pointer-events: none;
+  position: relative;
 
   > * {
     pointer-events: auto;
+  }
+
+  .segment-hover-cursor {
+    display: none;
+    position: absolute;
+    top: 0;
+    transform: translateY(-0.45em);
+    height: 2.4em;
+    width: 1px;
+    background: black;
+    pointer-events: none;
+    z-index: 99;
+
+    &.active {
+      display: inline-block;
+    }
+  }
+
+  /* only allow selection of spaces if it is in the settings */
+  &:not(.allow-cross-space) .token {
+    &:not(.is-space) {
+      ::selection {
+        background: lighten(#fff3cd, 7%);
+        text-shadow: 0 1px black;
+      }
+    }
+
+    &.is-space {
+      pointer-events: none;
+      user-select: -moz-none;
+      user-select: none;
+    }
+  }
+
+  &.allow-cross-space .token {
+    ::selection {
+      background: lighten(#fff3cd, 7%);
+      text-shadow: 0 1px black;
+    }
   }
 }
 
@@ -22,39 +62,35 @@
     padding: 0.25em 0.5em;
     background: #fff3cd;
 
-    ::selection {
-      background: lighten(#fff3cd, 7%);
-    }
-
+    /* Styling for tokenized tokens within single word */
     + .token:not(.is-space) {
-      margin-left: 2px;
+      margin-left: 4px;
       position: relative;
 
       &::before {
         content: "";
         display: inline-block;
-        width: 2px;
+        width: 4px;
         height: 100%;
         position: absolute;
-        left: -2px;
+        left: -4px;
         top: 0;
-        background: #e8ddba;
+
+        /* For now, let's just not style this -- so in fact the pseudo element can be removed */
+        // border-top: 4px solid #fff3cd;
+        // border-bottom: 4px solid #fff3cd;
       }
+    }
+
+    /* Space within a "token", when it is allowed */
+    .char.is-space {
+      padding: 0 0.5ch;
+      cursor: text;
     }
   }
 
   &.is-space {
-    pointer-events: none;
-    user-select: -moz-none;
-    user-select: none;
-    width: 0.25ch;
-    height: 0.25ch;
-    border-top: 0 none;
-    vertical-align: middle;
-    background: #e8ddba;
-    border-radius: 50%;
-    margin: 0 0.25ch;
-    white-space: wrap;
+    padding: 0.25em;
   }
 }
 
@@ -64,5 +100,9 @@
   &.is-punct {
     font-weight: 700;
     color: #e87e64;
+  }
+
+  &.is-space {
+    color: #e8ddba;
   }
 }
