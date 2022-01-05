@@ -17,7 +17,15 @@
   }
 }
 
-@media (min-width: 1400px) {
+.text-tool-controls {
+  margin-top: 0.5em;
+
+  .btn {
+    font-size: 0.9em;
+  }
+}
+
+@media (min-width: 1920px) {
   .text {
     width: 75vw;
     transform: translateX(-50%);
