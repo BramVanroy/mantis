@@ -11,7 +11,7 @@ class App extends Component {
   render() {
     return (
       <div>
-        <div>Honey, we're home.</div>
+        <p>Information about the project, including references.</p>
       </div>
     );
   }

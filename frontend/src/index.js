@@ -1,9 +1,9 @@
 import './styles/index.scss';
 
 import React, {Fragment} from 'react';
-import {Route, BrowserRouter as Router, Routes, useLocation} from 'react-router-dom';
-import App from './components/App';
+import {Route, BrowserRouter as Router, Routes} from 'react-router-dom';
 import {Container} from 'react-bootstrap';
+import Home from './components/Home';
 import MainNav from './components/MainNav';
 import Project from './components/Project';
 import Projects from './components/Projects';
@@ -17,7 +17,7 @@ ReactDOM.render(
         <Router>
           <MainNav/>
           <Routes>
-            <Route path="/" element={<App />}/>
+            <Route path="/" element={<Home />}/>
             <Route path="projects" element={<Projects />}/>
             <Route path="projects/:projectName" element={<Project />}>
               <Route path=":textName" element={<Text />}/>

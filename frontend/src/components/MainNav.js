@@ -21,13 +21,13 @@ export default function MainNav() {
     <Navbar>
       <Container>
         <LinkContainer to="/">
-          <Navbar.Brand>TPR-DB segmentation</Navbar.Brand>
+          <Navbar.Brand>Mantis</Navbar.Brand>
         </LinkContainer>
         <Navbar.Toggle aria-controls="basic-navbar-nav" />
         <Navbar.Collapse id="basic-navbar-nav" className="justify-content-end">
           <Nav className="justify-content-center" activeKey={useActiveKey()}>
             <Nav.Item>
-              <LinkContainer to="/"><Nav.Link>Home</Nav.Link></LinkContainer>
+              <LinkContainer to="/"><Nav.Link>About</Nav.Link></LinkContainer>
             </Nav.Item>
             <Nav.Item>
               <LinkContainer to="projects"><Nav.Link eventKey="projects">Projects</Nav.Link></LinkContainer>
