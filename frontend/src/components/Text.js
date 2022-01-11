@@ -1,33 +1,106 @@
 import '../styles/text.scss';
 
-import {Col, Container, Dropdown, DropdownButton, Nav, Row, Tab, ToggleButton, ToggleButtonGroup} from 'react-bootstrap';
-import React, {useState} from 'react';
+import {Alert, Button, ButtonGroup, Col, Container, Nav, Row, Tab, ToggleButton, ToggleButtonGroup} from 'react-bootstrap';
+
+import {cloneDeep, remove} from 'lodash';
+import React, {useEffect, useState} from 'react';
+
 import {getText} from '../data';
 import Segment from './Segment';
 import {useParams} from 'react-router-dom';
 
 
+// TODO FOR UNDO/REDO: so that setTextState actually contains the history
+// The problem currently is that undo/redo do not work because their disabled status is not updated
+// because editHistory is not a "state". So when it is updated, it does not trigger a re-render
 export default function Text() {
   const params = useParams();
   const [textState, setTextState] = useState(getText(params.projectName, params.textName));
   const [toolState, setToolState] = useState('tokenize');
+  const [segmentToolState, setSegmentToolState] = useState('new');
   const [allowCrossSpace, setallowCrossSpaceState] = useState(false);
+  const [warningMsg, setWarningMsg] = useState();
+  const [editHistory, setEditHistory] = useState([cloneDeep(textState.translations)]);
+
+  const [currHistoryIdx, setcurrHistoryIdx] = useState(0);
 
   const onCutSelect = (segId, segSide, segTokens) => {
+    const translations = cloneDeep(textState['translations']);
+    translations[segId][`${segSide}Tokens`] = segTokens;
+    updateHistory(translations);
+  };
+
+  const onCutSegment = (segId, segSide, firstTokens, lastTokens, direction, errorMsg='') => {
+    const translations = cloneDeep(textState['translations']);
+    const otherId = direction === 'up' ? segId-1 : segId+1;
+    const otherSide = segSide === 'src' ? 'tgt' : 'src';
+    translations[segId][`${segSide}Tokens`] = direction === 'up' ? lastTokens : firstTokens;
+
+    // TODO: make sure that this works better when the other side already has a sentence at this position. So probably just check whether this index exists/is empty
+    if (direction === 'up') {
+      if (segmentToolState === 'join') {
+        // try {
+        translations[otherId][`${segSide}Tokens`] = translations[otherId][`${segSide}Tokens`].concat(firstTokens);
+        // } catch (err) {
+        //   translations.unshift({[`${segSide}Tokens`]: firstTokens, [`${otherSide}Tokens`]: []});
+        // }
+      } else {
+        translations.splice(segId, 0, {[`${segSide}Tokens`]: firstTokens, [`${otherSide}Tokens`]: []});
+      }
+    } else {
+      if (segmentToolState === 'join') {
+        try {
+          translations[otherId][`${segSide}Tokens`] = lastTokens.concat(translations[otherId][`${segSide}Tokens`]);
+        } catch (err) {
+          translations.push({[`${segSide}Tokens`]: lastTokens, [`${otherSide}Tokens`]: []});
+        }
+      } else {
+        translations.splice(segId+1, 0, {[`${segSide}Tokens`]: lastTokens, [`${otherSide}Tokens`]: []});
+      }
+    }
+    updateHistory(translations);
+  };
+
+  const updateHistory = (translations) => {
+    if (currHistoryIdx === 0) {
+      setEditHistory((prevHistory) => {
+        prevHistory = cloneDeep(prevHistory);
+        prevHistory.unshift(cloneDeep(translations));
+        return prevHistory;
+      });
+    } else {
+      setEditHistory((prevHistory) => {
+        prevHistory = cloneDeep(prevHistory);
+        prevHistory.splice(0, currHistoryIdx, cloneDeep(translations));
+        return prevHistory;
+      });
+      setcurrHistoryIdx(0);
+    }
+  };
+
+  const setHistoryState = (evt) => {
+    evt.preventDefault();
+    const value = evt.currentTarget.value;
+    if (value === 'undo') {
+      setcurrHistoryIdx(currHistoryIdx + 1);
+    } else {
+      setcurrHistoryIdx(Math.min(currHistoryIdx - 1, 0));
+    }
+  };
+
+  useEffect(() => {
     setTextState((prevState) => {
-      const translations = prevState['translations'];
-      translations[segId][`${segSide}Tokens`] = segTokens;
       return {
         ...prevState,
-        ...{'translations': translations},
+        ...{'translations': editHistory[currHistoryIdx]},
       };
     });
-  };
+  }, [editHistory, currHistoryIdx]);
 
   return (
     <div id="text-wrapper" className={toolState}>
       {textState ?
-      <Tab.Container defaultActiveKey="src">
+      <Tab.Container defaultActiveKey="srctgt">
         <header>
           <h3><span>Text:</span> {textState.name}</h3>
           <Nav variant="pills" className="text-type-nav" as="nav">
@@ -43,13 +116,23 @@ export default function Text() {
           </Nav>
         </header>
         <aside className="text-tool-controls">
-          {
-            <ToggleButtonGroup type="radio" value={toolState} name="text-tool-controls" onChange={setToolState}>
-              <ToggleButton key="0" type="radio" id="tool-btn-tokenize" value="tokenize" variant="secondary">Token</ToggleButton>
-              <ToggleButton key="1" type="radio" id="tool-btn-segment-up" value="segment-up" variant="secondary">Segment &uarr;</ToggleButton>
-              <ToggleButton key="2" type="radio" id="tool-btn-segment-down" value="segment-down" variant="secondary">Segment &darr;</ToggleButton>
+          <ButtonGroup>
+            <Button key="0" id="tool-btn-history-undo" value="undo" variant="info" onClick={(evt) => setHistoryState(evt)} disabled={(editHistory.length === 1) || (editHistory.length+1 === currHistoryIdx)}>Undo</Button>
+            <Button key="1" id="tool-btn-history-redo" value="redo" variant="info" onClick={(evt) => setHistoryState(evt)} disabled={(editHistory.length === 1) || (currHistoryIdx === 0)}>Redo</Button>
+          </ButtonGroup>
+
+          <ToggleButtonGroup type="radio" value={toolState} name="text-tool-controls" onChange={setToolState}>
+            <ToggleButton key="0" type="radio" id="tool-btn-tokenize" value="tokenize" variant="primary">Token</ToggleButton>
+            <ToggleButton key="1" type="radio" id="tool-btn-segment-up" value="segment-up" variant="primary">Segment &uarr;</ToggleButton>
+            <ToggleButton key="2" type="radio" id="tool-btn-segment-down" value="segment-down" variant="primary">Segment &darr;</ToggleButton>
+          </ToggleButtonGroup>
+          {toolState.startsWith('segment') &&
+            <ToggleButtonGroup type="radio" value={segmentToolState} name="segment-tool-controls" onChange={setSegmentToolState}>
+              <ToggleButton key="0" type="radio" id="tool-btn-segment-join" value="join" variant="secondary">Join</ToggleButton>
+              <ToggleButton key="1" type="radio" id="tool-btn-segment-new" value="new" variant="secondary">New</ToggleButton>
             </ToggleButtonGroup>
           }
+          <Alert key={0} variant="danger" className={warningMsg ? 'active' : ''}>{warningMsg}</Alert>
         </aside>
 
         <Tab.Content>
@@ -57,7 +140,20 @@ export default function Text() {
             <Container fluid className="text src">
               {
                 textState.translations.map((translation, translationId) =>
-                  <Segment key={translationId} id={translationId} side="src" tokens={translation.srcTokens} onCutSelect={onCutSelect} allowCrossSpace={allowCrossSpace} tool={toolState} />
+                  <Row key={translationId}>
+                    <Col>
+                      <Segment
+                        key={translationId}
+                        id={translationId}
+                        side="src"
+                        tokens={translation.srcTokens}
+                        onCutSelect={onCutSelect}
+                        onCutSegment={onCutSegment}
+                        allowCrossSpace={allowCrossSpace}
+                        tool={toolState}
+                        segmentTool={segmentToolState} />
+                    </Col>
+                  </Row>
                 )
               }
             </Container>
@@ -67,7 +163,20 @@ export default function Text() {
             <Container fluid className="text tgt">
               {
                 textState.translations.map((translation, translationId) =>
-                  <Segment key={translationId} id={translationId} side="tgt" tokens={translation.tgtTokens} onCutSelect={onCutSelect} allowCrossSpace={allowCrossSpace} tool={toolState} />
+                  <Row key={translationId}>
+                    <Col>
+                      <Segment
+                        key={translationId}
+                        id={translationId}
+                        side="tgt"
+                        tokens={translation.tgtTokens}
+                        onCutSelect={onCutSelect}
+                        onCutSegment={onCutSegment}
+                        allowCrossSpace={allowCrossSpace}
+                        tool={toolState}
+                        segmentTool={segmentToolState} />
+                    </Col>
+                  </Row>
                 )
               }
             </Container>
@@ -81,10 +190,29 @@ export default function Text() {
                   <Row key={translationId}>
                     <Col>
 
-                      {translation.srcTokens && <Segment key={translationId} id={translationId} side="src" tokens={translation.srcTokens} onCutSelect={onCutSelect} allowCrossSpace={allowCrossSpace} tool={toolState} />}
+                      {translation.srcTokens && <Segment
+                        key={translationId}
+                        id={translationId}
+                        side="src"
+                        tokens={translation.srcTokens}
+                        onCutSelect={onCutSelect}
+                        onCutSegment={onCutSegment}
+                        allowCrossSpace={allowCrossSpace}
+                        tool={toolState}
+                        segmentTool={segmentToolState} />
+                      }
                     </Col>
                     <Col>
-                      {translation.tgtTokens && <Segment key={translationId} id={translationId} side="tgt" tokens={translation.tgtTokens} onCutSelect={onCutSelect} allowCrossSpace={allowCrossSpace} tool={toolState} />}
+                      {translation.tgtTokens && <Segment
+                        key={translationId}
+                        id={translationId}
+                        side="tgt"
+                        tokens={translation.tgtTokens}
+                        onCutSelect={onCutSelect}
+                        onCutSegment={onCutSegment}
+                        allowCrossSpace={allowCrossSpace}
+                        tool={toolState}
+                        segmentTool={segmentToolState} />}
                     </Col>
                   </Row>
                 )
