@@ -8,8 +8,6 @@ function Segment(props) {
   const ghostCursorEl = useRef(null);
   const segmentEl = useRef(null);
 
-  // ISSUE WITH MULTILINE: when first token on NOT-FIRST line is selected, last token of previous line is used
-
   const separateSpaces = (tokens) => {
     /** Given a list of lists of strings (tokens -> characters), make sure that
      * space characters cannot be part of a token. So existing tokens with spaces
@@ -78,10 +76,10 @@ function Segment(props) {
         // Re-split tokens if tokens are not allowed within words
         mergedTokens = separateSpaces(mergedTokens);
       }
-
-      selection.removeAllRanges(); // remove selection
       tokens.splice(startTokenIdx, nSelectedTokens, ...mergedTokens);
     }
+
+    selection.removeAllRanges(); // remove selection
 
     // Remove non-string values, which are possible if we splice at the front/back of a token
     tokens = tokens.map((token) => token.join('')).filter(String);
