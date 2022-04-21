@@ -1,7 +1,7 @@
 import '../styles/segment.scss';
 
 import {cloneDeep, isEqual} from 'lodash';
-import React, {useRef} from 'react';
+import React, {useRef, useState} from 'react';
 
 
 function Segment(props) {
@@ -76,10 +76,10 @@ function Segment(props) {
         // Re-split tokens if tokens are not allowed within words
         mergedTokens = separateSpaces(mergedTokens);
       }
-
-      selection.removeAllRanges(); // remove selection
       tokens.splice(startTokenIdx, nSelectedTokens, ...mergedTokens);
     }
+
+    selection.removeAllRanges(); // remove selection
 
     // Remove non-string values, which are possible if we splice at the front/back of a token
     tokens = tokens.map((token) => token.join('')).filter(String);
@@ -93,7 +93,6 @@ function Segment(props) {
     if (el.classList.contains('char') && props.tool !== 'tokenize') {
       el = el.parentElement;
     }
-    console.log(el);
     const siblings = [...Array.from(el.parentElement.children)];
     const targetIdx = siblings.indexOf(el);
     const isFirst = targetIdx === 0;
@@ -110,20 +109,21 @@ function Segment(props) {
   };
 
   const cutTokens = (evt) => {
-    const target = evt.target;
+    const target = evt.target.nodeType === Node.TEXT_NODE ? evt.target.parentElement: evt.target;
 
     if (target.classList.contains('char')) {
       // If this char is the only char in the token, do not update
       const isOnlyChar = evt.target.parentElement.children.length === 1;
       if (isOnlyChar) return false;
 
-      const tokens = cloneDeep(props.tokens);
-      const tokenIdx = parseInt(target.parentElement.getAttribute('token-id'));
-      let token = [...tokens[tokenIdx]];
       const [cutIdx, isFirstChar, isLastChar, isFirstHalf] = findCutIndex(target, evt.clientX);
 
       // Do not do cuts on the first and last character if the cursor is on the outside
       if ((isFirstChar && isFirstHalf) || (isLastChar && !isFirstHalf)) return false;
+
+      const tokens = cloneDeep(props.tokens);
+      const tokenIdx = parseInt(target.parentElement.getAttribute('token-id'));
+      let token = [...tokens[tokenIdx]];
 
       let tokenEnd = token.splice(cutIdx+1);
       token = token.join('');
@@ -134,11 +134,15 @@ function Segment(props) {
     }
   };
 
-  const spliceSegments = (evt) => {
-    const target = evt.target;
-
+  const spliceSegments = (evt, direction) => {
+    // FIX: allow for empty segments, which currently does not seem possible
+    const target = evt.target.nodeType === Node.TEXT_NODE ? evt.target.closest('.token') : (evt.target.classList.contains('char') ? evt.target.parentElement : evt.target);
     if (target.classList.contains('token')) {
-      const tokenIdx = findCutIndex(target, evt.clientX);
+      const [cutIdx, isFirstChar, isLastChar, isFirstHalf] = findCutIndex(target, evt.clientX);
+      const firstTokens = cloneDeep(props.tokens);
+      const lastTokens = firstTokens.splice(cutIdx+1);
+
+      props.onCutSegment(props.id, props.side, firstTokens, lastTokens, direction);
     }
   };
 
@@ -155,16 +159,13 @@ function Segment(props) {
         selectTokens();
       }
     } else if (props.tool === 'segment-up') {
-      // TODO:
+      spliceSegments(evt, 'up');
     } else if (props.tool === 'segment-down') {
-
-      // TODO:
+      spliceSegments(evt, 'down');
     }
 
     hideGhostCursor();
   };
-
-  // NOT WORKING. DIFFERENCE BETWEEN TOK AND CHAR DOES NOT WORK IN TOKENIZE
 
   const ghostCursorPosition = (evt) => {
     const target = evt.target;
@@ -233,7 +234,6 @@ function Segment(props) {
                   const charIsSpace = !char.trim().length;
                   const isPunct = tokenHasPunct && !tokenHasNoPunct ? true : !!char.match(/[\u2000-\u206F\u2E00-\u2E7F\\'!"#$%&()*+,\-./:;<=>?@[\]^_`{|}~]/);
                   return <span className={charIsSpace ? 'char is-space' : (isPunct ? 'char is-punct' : 'char')}
-                    unselectable={charIsSpace && !props.allowCrossSpace ? 'on' : 'off'}
                     key={charId}
                     char-id={charId}
                     char-text={char}
