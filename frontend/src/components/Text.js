@@ -9,10 +9,6 @@ import {getText} from '../data';
 import Segment from './Segment';
 import {useParams} from 'react-router-dom';
 
-
-// TODO FOR UNDO/REDO: so that setTextState actually contains the history
-// The problem currently is that undo/redo do not work because their disabled status is not updated
-// because editHistory is not a "state". So when it is updated, it does not trigger a re-render
 export default function Text() {
   const params = useParams();
   const [textState, setTextState] = useState(getText(params.projectName, params.textName));
@@ -25,6 +21,7 @@ export default function Text() {
   const [currHistoryIdx, setcurrHistoryIdx] = useState(0);
 
   const onCutSelect = (segId, segSide, segTokens) => {
+    // TODO: make sure that this works across segments. The reason is probably because we are not using prevState but instead textState directly
     const translations = cloneDeep(textState['translations']);
     translations[segId][`${segSide}Tokens`] = segTokens;
     updateHistory(translations);
@@ -69,27 +66,26 @@ export default function Text() {
         return prevHistory;
       });
     } else {
+      setcurrHistoryIdx(0);
       setEditHistory((prevHistory) => {
         prevHistory = cloneDeep(prevHistory);
         prevHistory.splice(0, currHistoryIdx, cloneDeep(translations));
         return prevHistory;
       });
-      setcurrHistoryIdx(0);
     }
   };
 
-  const setHistoryState = (evt) => {
-    evt.preventDefault();
-    const value = evt.currentTarget.value;
+  const setHistoryState = (value) => {
     if (value === 'undo') {
-      setcurrHistoryIdx(currHistoryIdx + 1);
+      setcurrHistoryIdx(Math.min(currHistoryIdx + 1, editHistory.length-1));
     } else {
-      setcurrHistoryIdx(Math.min(currHistoryIdx - 1, 0));
+      setcurrHistoryIdx(Math.max(currHistoryIdx - 1, 0));
     }
   };
 
   useEffect(() => {
     setTextState((prevState) => {
+      console.log(currHistoryIdx);
       return {
         ...prevState,
         ...{'translations': editHistory[currHistoryIdx]},
@@ -105,20 +101,20 @@ export default function Text() {
           <h3><span>Text:</span> {textState.name}</h3>
           <Nav variant="pills" className="text-type-nav" as="nav">
             {textState.hasSrc && <Nav.Item>
-              <Nav.Link eventKey="src">source</Nav.Link>
+              <Nav.Link eventKey="src" as="button">source</Nav.Link>
             </Nav.Item>}
             {textState.hasTgt && <Nav.Item>
-              <Nav.Link eventKey="tgt">target</Nav.Link>
+              <Nav.Link eventKey="tgt" as="button">target</Nav.Link>
             </Nav.Item>}
             {textState.hasSrc && textState.hasTgt && <Nav.Item>
-              <Nav.Link eventKey="srctgt">both</Nav.Link>
+              <Nav.Link eventKey="srctgt" as="button">both</Nav.Link>
             </Nav.Item>}
           </Nav>
         </header>
         <aside className="text-tool-controls">
           <ButtonGroup>
-            <Button key="0" id="tool-btn-history-undo" value="undo" variant="info" onClick={(evt) => setHistoryState(evt)} disabled={(editHistory.length === 1) || (editHistory.length+1 === currHistoryIdx)}>Undo</Button>
-            <Button key="1" id="tool-btn-history-redo" value="redo" variant="info" onClick={(evt) => setHistoryState(evt)} disabled={(editHistory.length === 1) || (currHistoryIdx === 0)}>Redo</Button>
+            <Button key="0" id="tool-btn-history-undo" value="undo" variant="info" onClick={(evt) => setHistoryState(evt.currentTarget.value)} disabled={(editHistory.length === 1) || (editHistory.length-1 <= currHistoryIdx)}>Undo</Button>
+            <Button key="1" id="tool-btn-history-redo" value="redo" variant="info" onClick={(evt) => setHistoryState(evt.currentTarget.value)} disabled={(editHistory.length === 1) || (currHistoryIdx === 0)}>Redo</Button>
           </ButtonGroup>
 
           <ToggleButtonGroup type="radio" value={toolState} name="text-tool-controls" onChange={setToolState}>
