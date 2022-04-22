@@ -85,7 +85,6 @@ export default function Text() {
 
   useEffect(() => {
     setTextState((prevState) => {
-      console.log(currHistoryIdx);
       return {
         ...prevState,
         ...{'translations': editHistory[currHistoryIdx]},
