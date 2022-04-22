@@ -7,37 +7,10 @@ import Cursor from './Cursor';
 function Segment(props) {
   const ghostCursor = useRef(null);
 
-  const separateSpaces = (tokens) => {
-    /** Given a list of lists of strings (tokens -> characters), make sure that
-     * space characters cannot be part of a token. So existing tokens with spaces
-     * in them are separated by the space character, which in turn becomes its own token
-     */
-    const splitTokens = [];
-    tokens.forEach((token) => {
-      let tmpToken = [];
-      token.forEach((char, charIdx) => {
-        const charIsSpace = !char.trim().length;
-        if (charIsSpace) {
-          splitTokens.push(tmpToken);
-          splitTokens.push([char]);
-          tmpToken = [];
-        } else {
-          tmpToken.push(char);
-        }
-
-        if (charIdx === token.length-1) {
-          splitTokens.push(tmpToken);
-        }
-      });
-    });
-    return splitTokens;
-  };
-
   const cutTokens = (evt) => {
     if (!ghostCursor.current.state.isVisible) return false;
     // If this char is the only char in the token, do not tokenize
-    const isOnlyChar = evt.target.parentElement.children.length === 1;
-    if (isOnlyChar) return false;
+    if (evt.target.parentElement.children.length === 1) return false;
 
     const charOnCursor = ghostCursor.current.state.char;
     const charIdx = parseInt(charOnCursor.getAttribute('char-id'));
@@ -45,10 +18,9 @@ function Segment(props) {
     const tokenIdx = parseInt(tokenOnCursor.getAttribute('token-id'));
     const tokens = cloneDeep(props.tokens);
 
-    // Splice token at character index
+    // Splice token at character index and turn into subtokens
     let tokenChars = [...tokens[tokenIdx]];
     let tokenEnd = tokenChars.splice(charIdx);
-
     tokenChars = tokenChars.join('');
     tokenEnd = tokenEnd.join('');
 
@@ -94,7 +66,7 @@ function Segment(props) {
 
     if (props.tool === 'tokenize') {
       const selection = window.getSelection();
-      // If nothing was selected (anchor and focus are the same node), do cut
+      // If nothing was selected (anchor and focus are the same node), do cut/glue
       if (selection.isCollapsed) {
         if (wasLeftClick) {
           cutTokens(evt);
@@ -105,7 +77,7 @@ function Segment(props) {
     } else if (wasLeftClick) {
       if (props.tool === 'segment-up') {
         spliceSegments(evt, 'up');
-      } else if (wasLeftClick && props.tool === 'segment-down') {
+      } else if (props.tool === 'segment-down') {
         spliceSegments(evt, 'down');
       }
     }

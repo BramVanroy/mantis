@@ -1,7 +1,5 @@
-import {cloneDeep, remove} from 'lodash';
 import React, {PureComponent} from 'react';
-
-import {useParams} from 'react-router-dom';
+import {cloneDeep} from 'lodash';
 
 export default class Cursor extends PureComponent {
   constructor(props) {
@@ -45,23 +43,28 @@ export default class Cursor extends PureComponent {
     const target = evt.target;
     const forTokenize = this.props.tool === 'tokenize';
 
-    if (target.classList.contains('char') && forTokenize) {
-      // Find the index of the character or token closest to the cursor and then place the ghost cursor next to it
-      const charForCursorPos = this.findItemAtPos(target, evt.clientX);
-      const parentToken = charForCursorPos.parentElement;
-      const parentSegment = charForCursorPos.closest('.segment');
+    if ((target.classList.contains('token') || target.classList.contains('char'))) {
+      let targetNode = target;
+      if (!forTokenize) {
+        // If in segment mode, we are interested in tokens: so find parent if current target is char
+        targetNode = target.classList.contains('char') ? target.parentNode : target;
+      } else if (!target.classList.contains('char')) {
+        // If we in tokenize mode, but target is not a character, stop
+        return false;
+      }
 
-      const left = charForCursorPos.getBoundingClientRect().left - parentSegment.getBoundingClientRect().left;
-      const top = charForCursorPos.getBoundingClientRect().top - parentSegment.getBoundingClientRect().top;
-      this.setPosition(left, top, parentToken, charForCursorPos);
-    } else if ((target.classList.contains('token') || target.classList.contains('char')) && !forTokenize) {
-      const targetToken = target.classList.contains('char') ? target.parentNode : target;
-      const tokenForCursorPos = this.findItemAtPos(targetToken, evt.clientX);
-      const parentSegment = tokenForCursorPos.closest('.segment');
+      // ItemForCursorPos is a char (if forTokenize) or a token (if not)
+      const ItemForCursorPos = this.findItemAtPos(targetNode, evt.clientX);
+      const parentSegment = ItemForCursorPos.closest('.segment');
 
-      const left = tokenForCursorPos.getBoundingClientRect().left - parentSegment.getBoundingClientRect().left;
-      const top = tokenForCursorPos.getBoundingClientRect().top - parentSegment.getBoundingClientRect().top;
-      this.setPosition(left, top, tokenForCursorPos);
+      const left = ItemForCursorPos.getBoundingClientRect().left - parentSegment.getBoundingClientRect().left;
+      const top = ItemForCursorPos.getBoundingClientRect().top - parentSegment.getBoundingClientRect().top;
+      if (forTokenize) {
+        const parentToken = ItemForCursorPos.parentElement;
+        this.setPosition(left, top, parentToken, ItemForCursorPos);
+      } else {
+        this.setPosition(left, top, ItemForCursorPos, null);
+      }
     } else {
       this.hide();
     }
@@ -69,8 +72,8 @@ export default class Cursor extends PureComponent {
 
   findItemAtPos(el, eventX) {
     const forTokenize = this.props.tool === 'tokenize';
-    // If we are tokenizing, we try to find the index of the character within a token
-    // Otherwise we are trying to find the position of a token in the segment
+    // If we are tokenizing, we find the character to put the cursor in front of
+    // If we are segmenting, we find the token to put the cursor in front of
 
     if (el.classList.contains('char') && !forTokenize) {
       el = el.parentElement;
