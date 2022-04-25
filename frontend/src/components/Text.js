@@ -77,22 +77,23 @@ class Text extends Component {
 
   updateHistory() {
     this.setState((prevState) => {
-      const prevHistory = cloneDeep(prevState.history);
-      const prevTranslations = cloneDeep(prevState.text.translations);
+      const prevHistory = cloneDeep(prevState.history); // array of translations
+      const prevTranslations = cloneDeep(prevState.text.translations); // current translations to add to array
       let newHistoryIdx;
-      if (this.state.historyIdx === 0) {
+      if (prevState.historyIdx === 0) {
         prevHistory.unshift(prevTranslations);
         newHistoryIdx = prevState.historyIdx;
       } else {
         // historyIdx is not 0, so we are navigating somewhere in the history undo/redo
         // but because we did something new, we clear history and start from 0 again
-        prevHistory.splice(0, prevHistory.historyIdx, prevTranslations);
+        prevHistory.splice(0, prevState.historyIdx, prevTranslations);
         newHistoryIdx = 0;
       }
 
       return {
         ...prevState,
-        ...{history: prevHistory, historyIdx: newHistoryIdx},
+        history: prevHistory,
+        historyIdx: newHistoryIdx,
       };
     });
   };
@@ -111,8 +112,6 @@ class Text extends Component {
         historyIdx: newHistoryIdx,
         text: {...prevState.text, 'translations': this.state.history[newHistoryIdx]},
       };
-      console.log(prevState);
-      console.log(newState);
       return newState;
     });
   };
@@ -152,7 +151,9 @@ class Text extends Component {
 
           <Tab.Content>
             {this.state.text.hasSrc && <Tab.Pane eventKey="src">
-              <Container fluid className="text src">
+              <Container fluid className="text src" onContextMenu={(evt) => {
+                evt.preventDefault(); return false;
+              }}>
                 {
                   this.state.text.translations.map((translation, translationId) =>
                     <Row key={translationId}>
@@ -172,7 +173,9 @@ class Text extends Component {
               </Container>
             </Tab.Pane>}
 
-            {this.state.text.hasTgt && <Tab.Pane eventKey="tgt">
+            {this.state.text.hasTgt && <Tab.Pane eventKey="tgt" onContextMenu={(evt) => {
+              evt.preventDefault(); return false;
+            }}>
               <Container fluid className="text tgt">
                 {
                   this.state.text.translations.map((translation, translationId) =>
@@ -194,7 +197,9 @@ class Text extends Component {
             </Tab.Pane>}
 
             {this.state.text.hasTgt && this.state.text.hasSrc && <Tab.Pane eventKey="srctgt">
-              <Container fluid className="text src tgt">
+              <Container fluid className="text src tgt" onContextMenu={(evt) => {
+                evt.preventDefault(); return false;
+              }}>
                 <Row><Col><h4>Source</h4></Col><Col><h4>Target</h4></Col></Row>
                 {
                   this.state.text.translations.map((translation, translationId) =>

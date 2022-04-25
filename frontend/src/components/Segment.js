@@ -1,10 +1,11 @@
 import '../styles/segment.scss';
 
 import {cloneDeep, isEqual} from 'lodash';
-import React, {useRef, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import Cursor from './Cursor';
 
 function Segment(props) {
+  const thisSegment = useRef(null);
   const ghostCursor = useRef(null);
 
   const cutTokens = (evt) => {
@@ -35,14 +36,16 @@ function Segment(props) {
 
     const tokenOnCursor = ghostCursor.current.state.token;
     const tokenIdx = parseInt(tokenOnCursor.getAttribute('token-id'));
-    if (tokenIdx === 0) return false;
-
     const tokens = cloneDeep(props.tokens);
+    const currToken = tokens[tokenIdx];
+    // Do not glue on first token or on spaces
+    if (tokenIdx === 0 || !currToken.trim().length) return false;
+
     const prevToken = tokens[tokenIdx-1];
     // If previous token is space, don't do anything
     if (!prevToken.trim().length) return false;
 
-    const mergedTokens = prevToken + tokens[tokenIdx];
+    const mergedTokens = prevToken + currToken;
 
     tokens.splice(tokenIdx-1, 2, mergedTokens);
     props.onCutSelect(props.id, props.side, tokens);
@@ -92,13 +95,11 @@ function Segment(props) {
   };
 
   return (
-    <div className={props.allowCrossSpace ? `segment allow-cross-space ${props.side}` : `segment ${props.side}`}
+    <div ref={thisSegment} className={props.allowCrossSpace ? `segment allow-cross-space ${props.side}` : `segment ${props.side}`}
       onMouseMove={ghostCursorPosition}
       onMouseOut={hideGhostCursor}
-      onContextMenu={(evt) => {
-        evt.preventDefault(); return false;
-      }}
-      onMouseUp={onMouseUp}>
+      onMouseUp={onMouseUp}
+    >
       <Cursor ref={ghostCursor} tool={props.tool} />
       <span className="segment-id">{`${props.id+1}.`}</span>
       <span className="tokens">
