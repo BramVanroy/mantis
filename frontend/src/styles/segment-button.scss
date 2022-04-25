@@ -11,7 +11,13 @@
   z-index: 99;
 }
 
-.row:nth-child(2) .btn.btn-add-segment:first-child {
+.row:first-child .btn.btn-add-segment:first-child {
+  bottom: auto;
+  top: -0.75em;
+}
+
+// In the parallel view src+tgt, the first row is just text header "Source" and "Target"
+.src.tgt .row:nth-child(2) .btn.btn-add-segment:first-child {
   bottom: auto;
   top: -0.75em;
 }
