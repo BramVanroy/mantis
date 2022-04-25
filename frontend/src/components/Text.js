@@ -2,10 +2,10 @@ import '../styles/text.scss';
 
 import {Alert, Button, ButtonGroup, Col, Container, Nav, Row, Tab, ToggleButton, ToggleButtonGroup} from 'react-bootstrap';
 
+import {cloneDeep, zip} from 'lodash';
 import React, {Component} from 'react';
 
-import {AddSegmentBtn} from './AddSegmentButton';
-import {cloneDeep} from 'lodash';
+import {AddOrRemoveBtn} from './SegmentButton';
 import {getText} from '../data';
 import Segment from './Segment';
 import {withRouter} from '../utils';
@@ -27,6 +27,7 @@ class Text extends Component {
     this.updateHistory = this.updateHistory.bind(this);
     this.undoOrRedo = this.undoOrRedo.bind(this);
     this.createNewSegment = this.createNewSegment.bind(this);
+    this.deleteEmptySegment = this.deleteEmptySegment.bind(this);
   }
 
   onCutSelect(segId, segSide, segTokens) {
@@ -150,7 +151,6 @@ class Text extends Component {
       }
 
       // Fill in last item based on which button was pressed...
-      console.log(insertAt, nTranslations);
       if (insertAt === nTranslations) { // if last button was pressed, insert empty row on both sides
         newTranslations[nTranslations] = {
           [segSide]: '',
@@ -177,7 +177,61 @@ class Text extends Component {
     });
   }
 
+  deleteEmptySegment(segId, segSide) {
+    this.setState((prevState) => {
+      const translations = cloneDeep(prevState.text.translations);
+      const nTranslations = translations.length;
+      const otherSide = segSide === 'src' ? 'tgt' : 'src';
+
+      const newTranslations = [];
+      const deleteAt = segId;
+      for (let idx = 0; idx < nTranslations-1; idx++) {
+        const transls = translations[idx];
+        if (idx < deleteAt) {
+          newTranslations[idx] = transls;
+        } else { // As soon as we have reached the segment to delete, just +1 the index to retrieve
+          newTranslations[idx] = { // Compensate for empty segment by retrieving previous segment
+            [segSide]: translations[idx+1][segSide],
+            [`${segSide}Tokens`]: translations[idx+1][`${segSide}Tokens`],
+            [otherSide]: transls[otherSide],
+            [`${otherSide}Tokens`]: transls[`${otherSide}Tokens`],
+          };
+        }
+      }
+
+      return {
+        ...prevState,
+        text: {...prevState.text, 'translations': newTranslations},
+      };
+    }, () => {
+      this.updateHistory();
+    });
+  }
+
+  createCol(translation, translationId, side) {
+    const tokens = side === 'src' ? translation.srcTokens : translation.tgtTokens;
+    const otherTokens = side === 'src' ? translation.tgtTokens : translation.srcTokens;
+    const shouldNotHaveRemoveBtn = tokens.length || (translationId === this.state.text.translations.length-1 && otherTokens.length);
+    return <Col>
+      {translationId === 0 && <AddOrRemoveBtn type="add" createNewSegment={this.createNewSegment} side={side} id={-1} />}
+      <Segment
+        key={translationId}
+        id={translationId}
+        side={side}
+        tokens={tokens}
+        onCutSelect={this.onCutSelect}
+        onCutSegment={this.onCutSegment}
+        tool={this.state.tool} />
+      {!shouldNotHaveRemoveBtn && <AddOrRemoveBtn type="remove" createNewSegment={this.deleteEmptySegment} side={side} id={translationId} />}
+      <AddOrRemoveBtn type="add" createNewSegment={this.createNewSegment} side={side} id={translationId} />
+    </Col>;
+  }
+
   render() {
+    const srcCols = this.state.text.hasSrc && this.state.text.translations.map((translation, translationId) => this.createCol(translation, translationId, 'src'));
+    const tgtCols = this.state.text.hasTgt && this.state.text.translations.map((translation, translationId) => this.createCol(translation, translationId, 'tgt'));
+    const srcTgtCols = this.state.text.hasSrc && this.state.text.hasTgt && zip(srcCols, tgtCols);
+
     return (
       <div id="text-wrapper" className={this.state.tool}>
         {this.state.text ?
@@ -216,21 +270,8 @@ class Text extends Component {
                 evt.preventDefault(); return false;
               }}>
                 {
-                  this.state.text.translations.map((translation, translationId) =>
-                    <Row key={translationId}>
-                      <Col>
-                        {translationId === 0 && <AddSegmentBtn createNewSegment={this.createNewSegment} side="src" id={-1} />}
-                        <Segment
-                          key={translationId}
-                          id={translationId}
-                          side="src"
-                          tokens={translation.srcTokens}
-                          onCutSelect={this.onCutSelect}
-                          onCutSegment={this.onCutSegment}
-                          tool={this.state.tool}/>
-                        <AddSegmentBtn createNewSegment={this.createNewSegment} side="src" id={translationId} />
-                      </Col>
-                    </Row>
+                  srcCols.map((srcCol, colId) =>
+                    <Row key={colId}>{srcCol}</Row>
                   )
                 }
               </Container>
@@ -241,21 +282,8 @@ class Text extends Component {
             }}>
               <Container fluid className="text tgt">
                 {
-                  this.state.text.translations.map((translation, translationId) =>
-                    <Row key={translationId}>
-                      <Col>
-                        {translationId === 0 && <AddSegmentBtn createNewSegment={this.createNewSegment} side="tgt" id={-1} />}
-                        <Segment
-                          key={translationId}
-                          id={translationId}
-                          side="tgt"
-                          tokens={translation.tgtTokens}
-                          onCutSelect={this.onCutSelect}
-                          onCutSegment={this.onCutSegment}
-                          tool={this.state.tool} />
-                        <AddSegmentBtn createNewSegment={this.createNewSegment} side="tgt" id={translationId} />
-                      </Col>
-                    </Row>
+                  tgtCols.map((tgtCol, colId) =>
+                    <Row key={colId}>{tgtCol}</Row>
                   )
                 }
               </Container>
@@ -267,34 +295,10 @@ class Text extends Component {
               }}>
                 <Row><Col><h4>Source</h4></Col><Col><h4>Target</h4></Col></Row>
                 {
-                  this.state.text.translations.map((translation, translationId) =>
+                  srcTgtCols.map(([srcCol, tgtCol], translationId) =>
                     <Row key={translationId}>
-                      <Col>
-                        {translationId === 0 && <AddSegmentBtn createNewSegment={this.createNewSegment} side="src" id={-1} />}
-                        {translation.srcTokens && <Segment
-                          key={translationId}
-                          id={translationId}
-                          side="src"
-                          tokens={translation.srcTokens}
-                          onCutSelect={this.onCutSelect}
-                          onCutSegment={this.onCutSegment}
-                          tool={this.state.tool} />
-                        }
-                        <AddSegmentBtn createNewSegment={this.createNewSegment} side="src" id={translationId} />
-                      </Col>
-                      <Col>
-                        {translationId === 0 && <AddSegmentBtn createNewSegment={this.createNewSegment} side="tgt" id={-1} />}
-                        {translation.tgtTokens && <Segment
-                          key={translationId}
-                          id={translationId}
-                          side="tgt"
-                          tokens={translation.tgtTokens}
-                          onCutSelect={this.onCutSelect}
-                          onCutSegment={this.onCutSegment}
-                          tool={this.state.tool} />}
-
-                        <AddSegmentBtn createNewSegment={this.createNewSegment} side="tgt" id={translationId} />
-                      </Col>
+                      {srcCol}
+                      {tgtCol}
                     </Row>
                   )
                 }

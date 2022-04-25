@@ -21,3 +21,8 @@
   bottom: auto;
   top: -0.75em;
 }
+
+.btn.btn-add-segment.remove {
+  top: calc(50% - 0.75em) !important;
+  bottom: auto !important;
+}

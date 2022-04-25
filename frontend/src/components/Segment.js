@@ -1,7 +1,7 @@
 import '../styles/segment.scss';
 
 import {cloneDeep, isEqual} from 'lodash';
-import React, {useRef} from 'react';
+import React, {useEffect, useRef} from 'react';
 import Cursor from './Cursor';
 
 function Segment(props) {
@@ -94,11 +94,23 @@ function Segment(props) {
     ghostCursor.current.reposition(evt);
   };
 
+  useEffect((effect) => {
+    document.addEventListener('mousemove', (evt) =>{
+      console.log(evt.target);
+    });
+  });
+
   return (
     <div ref={thisSegment} className={props.allowCrossSpace ? `segment allow-cross-space ${props.side}` : `segment ${props.side}`}
       onMouseMove={ghostCursorPosition}
-      onMouseOut={hideGhostCursor}
-      onMouseUp={onMouseUp}
+      onMouseOut={() => {
+        hideGhostCursor();
+        console.log('mouseout');
+      }}
+      onMouseUp={(evt) => {
+        onMouseUp(evt);
+        console.log('mouseup');
+      }}
     >
       <Cursor ref={ghostCursor} tool={props.tool} />
       <span className="segment-id">{`${props.id+1}.`}</span>
