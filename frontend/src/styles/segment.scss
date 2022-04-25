@@ -1,6 +1,5 @@
 .segment {
   font-size: 1.2rem;
-  pointer-events: none;
   position: relative;
   display: flex;
   align-items: flex-start;
@@ -11,11 +10,6 @@
     align-items: center;
     justify-content: flex-start;
     flex-wrap: wrap;
-    pointer-events: none;
-
-    * {
-      pointer-events: auto;
-    }
   }
 
   .segment-hover-cursor {
