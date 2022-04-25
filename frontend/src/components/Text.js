@@ -2,9 +2,10 @@ import '../styles/text.scss';
 
 import {Alert, Button, ButtonGroup, Col, Container, Nav, Row, Tab, ToggleButton, ToggleButtonGroup} from 'react-bootstrap';
 
-import {cloneDeep, remove} from 'lodash';
 import React, {Component} from 'react';
 
+import {AddSegmentBtn} from './AddSegmentButton';
+import {cloneDeep} from 'lodash';
 import {getText} from '../data';
 import Segment from './Segment';
 import {withRouter} from '../utils';
@@ -25,6 +26,7 @@ class Text extends Component {
     this.onCutSegment = this.onCutSegment.bind(this);
     this.updateHistory = this.updateHistory.bind(this);
     this.undoOrRedo = this.undoOrRedo.bind(this);
+    this.createNewSegment = this.createNewSegment.bind(this);
   }
 
   onCutSelect(segId, segSide, segTokens) {
@@ -116,6 +118,65 @@ class Text extends Component {
     });
   };
 
+  createNewSegment(segId, segSide) {
+    this.setState((prevState) => {
+      const translations = cloneDeep(prevState.text.translations);
+      const nTranslations = translations.length;
+      const otherSide = segSide === 'src' ? 'tgt' : 'src';
+
+      const newTranslations = [];
+      const insertAt = segId+1;
+      // Iterate and as soon as we've reached the relevant index, make sure
+      // that at subsequent iterations we take the previous information
+      for (let idx = 0; idx < nTranslations; idx++) {
+        const transls = translations[idx];
+        if (idx < insertAt) {
+          newTranslations[idx] = transls;
+        } else if (idx === insertAt) { // Insert empty segment
+          newTranslations[idx] = {
+            [segSide]: '',
+            [`${segSide}Tokens`]: [],
+            [otherSide]: transls[otherSide],
+            [`${otherSide}Tokens`]: transls[`${otherSide}Tokens`],
+          };
+        } else {
+          newTranslations[idx] = { // Compensate for empty segment by retrieving previous segment
+            [segSide]: translations[idx-1][segSide],
+            [`${segSide}Tokens`]: translations[idx-1][`${segSide}Tokens`],
+            [otherSide]: transls[otherSide],
+            [`${otherSide}Tokens`]: transls[`${otherSide}Tokens`],
+          };
+        }
+      }
+
+      // Fill in last item based on which button was pressed...
+      console.log(insertAt, nTranslations);
+      if (insertAt === nTranslations) { // if last button was pressed, insert empty row on both sides
+        newTranslations[nTranslations] = {
+          [segSide]: '',
+          [`${segSide}Tokens`]: [],
+          [otherSide]: '',
+          [`${otherSide}Tokens`]: [],
+        };
+      } else {
+        newTranslations[nTranslations] = { // if not last button clicked, retrieve the final existing segment and re-add
+          [segSide]: translations[nTranslations-1][segSide],
+          [`${segSide}Tokens`]: translations[nTranslations-1][`${segSide}Tokens`],
+          [otherSide]: '',
+          [`${otherSide}Tokens`]: [],
+        };
+      }
+
+
+      return {
+        ...prevState,
+        text: {...prevState.text, 'translations': newTranslations},
+      };
+    }, () => {
+      this.updateHistory();
+    });
+  }
+
   render() {
     return (
       <div id="text-wrapper" className={this.state.tool}>
@@ -158,6 +219,7 @@ class Text extends Component {
                   this.state.text.translations.map((translation, translationId) =>
                     <Row key={translationId}>
                       <Col>
+                        {translationId === 0 && <AddSegmentBtn createNewSegment={this.createNewSegment} side="src" id={-1} />}
                         <Segment
                           key={translationId}
                           id={translationId}
@@ -166,6 +228,7 @@ class Text extends Component {
                           onCutSelect={this.onCutSelect}
                           onCutSegment={this.onCutSegment}
                           tool={this.state.tool}/>
+                        <AddSegmentBtn createNewSegment={this.createNewSegment} side="src" id={translationId} />
                       </Col>
                     </Row>
                   )
@@ -181,6 +244,7 @@ class Text extends Component {
                   this.state.text.translations.map((translation, translationId) =>
                     <Row key={translationId}>
                       <Col>
+                        {translationId === 0 && <AddSegmentBtn createNewSegment={this.createNewSegment} side="tgt" id={-1} />}
                         <Segment
                           key={translationId}
                           id={translationId}
@@ -189,6 +253,7 @@ class Text extends Component {
                           onCutSelect={this.onCutSelect}
                           onCutSegment={this.onCutSegment}
                           tool={this.state.tool} />
+                        <AddSegmentBtn createNewSegment={this.createNewSegment} side="tgt" id={translationId} />
                       </Col>
                     </Row>
                   )
@@ -205,7 +270,7 @@ class Text extends Component {
                   this.state.text.translations.map((translation, translationId) =>
                     <Row key={translationId}>
                       <Col>
-
+                        {translationId === 0 && <AddSegmentBtn createNewSegment={this.createNewSegment} side="src" id={-1} />}
                         {translation.srcTokens && <Segment
                           key={translationId}
                           id={translationId}
@@ -215,8 +280,10 @@ class Text extends Component {
                           onCutSegment={this.onCutSegment}
                           tool={this.state.tool} />
                         }
+                        <AddSegmentBtn createNewSegment={this.createNewSegment} side="src" id={translationId} />
                       </Col>
                       <Col>
+                        {translationId === 0 && <AddSegmentBtn createNewSegment={this.createNewSegment} side="tgt" id={-1} />}
                         {translation.tgtTokens && <Segment
                           key={translationId}
                           id={translationId}
@@ -225,6 +292,8 @@ class Text extends Component {
                           onCutSelect={this.onCutSelect}
                           onCutSegment={this.onCutSegment}
                           tool={this.state.tool} />}
+
+                        <AddSegmentBtn createNewSegment={this.createNewSegment} side="tgt" id={translationId} />
                       </Col>
                     </Row>
                   )

@@ -1,7 +1,7 @@
 import '../styles/segment.scss';
 
 import {cloneDeep, isEqual} from 'lodash';
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useRef} from 'react';
 import Cursor from './Cursor';
 
 function Segment(props) {
@@ -129,11 +129,7 @@ function Segment(props) {
 }
 
 function SegmentIsEqual(prevProps, nextProps) {
-  if (isEqual(nextProps.tokens, prevProps.tokens) && (nextProps.id === prevProps.id) && (nextProps.tool === prevProps.tool)) {
-    return true;
-  } else {
-    return false;
-  }
+  return isEqual(nextProps.tokens, prevProps.tokens) && (nextProps.id === prevProps.id) && (nextProps.tool === prevProps.tool);
 }
 
 export default React.memo(Segment, SegmentIsEqual);
