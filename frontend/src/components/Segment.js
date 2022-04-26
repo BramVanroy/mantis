@@ -9,7 +9,8 @@ function Segment(props) {
   const ghostCursor = useRef(null);
 
   const cutTokens = (evt) => {
-    if (!ghostCursor.current.state.isVisible) return false;
+    // Do not tokenize when cursor not visible or when it as at the tail of the token
+    if (!ghostCursor.current.state.isVisible || ghostCursor.current.state.atEndOfToken) return false;
     // If this char is the only char in the token, do not tokenize
     if (evt.target.parentElement.children.length === 1) return false;
 
@@ -27,15 +28,23 @@ function Segment(props) {
 
     if (tokenEnd.length && tokenChars.length) {
       tokens.splice(tokenIdx, 1, tokenChars, tokenEnd);
-      props.onCutSelect(props.id, props.side, tokens);
+      props.onTokenize(props.id, props.side, tokens);
     }
   };
 
   const glueTokens = (evt) => {
-    if (!ghostCursor.current.state.isVisible) return false;
+    // Do not use the ghost cursors. The ghost cursor is sensitive, and
+    // intended for char-level operations.
+    // Here we do not care if a users clicks in the token (padding) or chars specifically
+    let token = evt.target;
 
-    const tokenOnCursor = ghostCursor.current.state.token;
-    const tokenIdx = parseInt(tokenOnCursor.getAttribute('token-id'));
+    if (token.classList.contains('char')) {
+      token = token.parentElement;
+    } else if (!token.classList.contains('token')) {
+      return false;
+    }
+
+    const tokenIdx = parseInt(token.getAttribute('token-id'));
     const tokens = cloneDeep(props.tokens);
     const currToken = tokens[tokenIdx];
     // Do not glue on first token or on spaces
@@ -48,17 +57,20 @@ function Segment(props) {
     const mergedTokens = prevToken + currToken;
 
     tokens.splice(tokenIdx-1, 2, mergedTokens);
-    props.onCutSelect(props.id, props.side, tokens);
+    props.onTokenize(props.id, props.side, tokens);
   };
 
   const spliceSegments = (evt, direction) => {
     const target = evt.target.nodeType === Node.TEXT_NODE ? evt.target.closest('.token') : (evt.target.classList.contains('char') ? evt.target.parentElement : evt.target);
     if (target.classList.contains('token')) {
-      const [cutIdx, isFirstChar, isLastChar, isFirstHalf] = ghostCursor.findIndex(target, evt.clientX);
+      const tokenOnCursor = ghostCursor.current.state.token;
+      let tokenIdx = parseInt(tokenOnCursor.getAttribute('token-id'));
+      // When the cursor is at the very end of a token, +1 the index so that we move ALL tokens
+      tokenIdx += ghostCursor.current.state.atEndOfToken ? 1 : 0;
       const firstTokens = cloneDeep(props.tokens);
-      const lastTokens = firstTokens.splice(cutIdx+1);
+      const lastTokens = firstTokens.splice(tokenIdx);
 
-      props.onCutSegment(props.id, props.side, firstTokens, lastTokens, direction);
+      props.onSegment(props.id, props.side, firstTokens, lastTokens, direction);
     }
   };
 
@@ -94,23 +106,12 @@ function Segment(props) {
     ghostCursor.current.reposition(evt);
   };
 
-  useEffect((effect) => {
-    document.addEventListener('mousemove', (evt) =>{
-      console.log(evt.target);
-    });
-  });
 
   return (
     <div ref={thisSegment} className={props.allowCrossSpace ? `segment allow-cross-space ${props.side}` : `segment ${props.side}`}
       onMouseMove={ghostCursorPosition}
-      onMouseOut={() => {
-        hideGhostCursor();
-        console.log('mouseout');
-      }}
-      onMouseUp={(evt) => {
-        onMouseUp(evt);
-        console.log('mouseup');
-      }}
+      onMouseOut={hideGhostCursor}
+      onMouseUp={onMouseUp}
     >
       <Cursor ref={ghostCursor} tool={props.tool} />
       <span className="segment-id">{`${props.id+1}.`}</span>

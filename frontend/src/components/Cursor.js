@@ -10,7 +10,9 @@ export default class Cursor extends PureComponent {
       top: 0,
       token: null,
       char: null,
-      isVisible: false};
+      isVisible: false,
+      atEndOfToken: false,
+    };
   }
 
   hide() {
@@ -33,8 +35,8 @@ export default class Cursor extends PureComponent {
     });
   }
 
-  setPosition(left, top, token, char=null) {
-    this.setState({left: left, top: top, token: token, char: char}, () => {
+  setPosition(left, top, token, char=null, atEndOfToken=false) {
+    this.setState({left: left, top: top, token: token, char: char, atEndOfToken: atEndOfToken}, () => {
       this.show();
     });
   }
@@ -54,16 +56,20 @@ export default class Cursor extends PureComponent {
       }
 
       // ItemForCursorPos is a char (if forTokenize) or a token (if not)
-      const ItemForCursorPos = this.findItemAtPos(targetNode, evt.clientX);
-      const parentSegment = ItemForCursorPos.closest('.segment');
+      const [itemForCursorPos, atEndOfToken] = this.findItemAtPos(targetNode, evt.clientX);
+      const parentSegment = itemForCursorPos.closest('.segment');
 
-      const left = ItemForCursorPos.getBoundingClientRect().left - parentSegment.getBoundingClientRect().left;
-      const top = ItemForCursorPos.getBoundingClientRect().top - parentSegment.getBoundingClientRect().top;
+      let left = itemForCursorPos.getBoundingClientRect().left - parentSegment.getBoundingClientRect().left;
+      if (atEndOfToken) {
+        left += itemForCursorPos.getBoundingClientRect().width;
+      }
+
+      const top = itemForCursorPos.getBoundingClientRect().top - parentSegment.getBoundingClientRect().top;
       if (forTokenize) {
-        const parentToken = ItemForCursorPos.parentElement;
-        this.setPosition(left, top, parentToken, ItemForCursorPos);
+        const parentToken = itemForCursorPos.parentElement;
+        this.setPosition(left, top, parentToken, itemForCursorPos, atEndOfToken);
       } else {
-        this.setPosition(left, top, ItemForCursorPos, null);
+        this.setPosition(left, top, itemForCursorPos, null, atEndOfToken);
       }
     } else {
       this.hide();
@@ -74,7 +80,6 @@ export default class Cursor extends PureComponent {
     const forTokenize = this.props.tool === 'tokenize';
     // If we are tokenizing, we find the character to put the cursor in front of
     // If we are segmenting, we find the token to put the cursor in front of
-
     if (el.classList.contains('char') && !forTokenize) {
       el = el.parentElement;
     }
@@ -83,7 +88,9 @@ export default class Cursor extends PureComponent {
     const center = el.getBoundingClientRect().left + (el.getBoundingClientRect().width / 2);
 
     const actualIdx = (eventX < center) ? targetIdx : Math.min(targetIdx+1, siblings.length-1);
-    return siblings[actualIdx];
+    const atEndOfToken = eventX >= center && targetIdx === siblings.length-1;
+
+    return [siblings[actualIdx], atEndOfToken];
   };
 
   render() {

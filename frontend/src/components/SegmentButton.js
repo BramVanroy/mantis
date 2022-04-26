@@ -5,12 +5,12 @@ import React from 'react';
 
 
 export function AddOrRemoveBtn(props) {
-  const onClick = () => {
-    props.createNewSegment(props.id, props.side, props.type);
+  const addOrDeleteSegment = () => {
+    props.onClick(props.id, props.side);
   };
   let className = 'btn-add-segment';
   className += props.type === 'add' ? ' add' : ' remove';
   return (
-    <Button className={className} variant="light" onClick={onClick}>{props.type === 'add' ? '+' : '-'}</Button>
+    <Button className={className} variant="light" onClick={addOrDeleteSegment}>{props.type === 'add' ? '+' : '-'}</Button>
   );
 }

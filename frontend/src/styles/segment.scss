@@ -16,7 +16,7 @@
     display: none;
     position: absolute;
     top: 0;
-    transform: translateY(-0.15em);
+    transform: translateY(-0.37em);
     height: 2.3em;
     width: 1px;
     background: black;
@@ -38,6 +38,7 @@
 .token {
   display: inline-block;
   cursor: text;
+  padding: 0.25em 0.5em;
 
   &:not(.is-space) {
     background: #fff3cd;
@@ -67,16 +68,6 @@
       padding: 0 0.5ch;
       cursor: text;
     }
-
-    .char {
-      &:first-child {
-        padding-left: 0.5em;
-      }
-
-      &:last-child {
-        padding-right: 0.5em;
-      }
-    }
   }
 
   &.is-space {
@@ -93,7 +84,6 @@
 
 .char {
   display: inline-block;
-  padding: 0.25em 0;
 
   &.is-punct {
     font-weight: 700;

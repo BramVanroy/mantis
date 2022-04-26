@@ -10,11 +10,14 @@
 }
 
 .text {
-  padding-top: 1em;
+  padding-top: 1.5em;
+  padding-bottom: 1.5em;
 
   .col {
     border-top: 1px solid #dee2e6;
     position: relative;
+    padding-top: 0.5em;
+    padding-bottom: 0.5em;
   }
 
   .row:first-child .col {
@@ -35,11 +38,6 @@
     .row:nth-child(2) .col {
       border-top: 0 none;
     }
-  }
-
-  .col {
-    padding-top: 0.5em;
-    padding-bottom: 0.5em;
   }
 }
 
