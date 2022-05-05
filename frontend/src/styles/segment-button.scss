@@ -1,0 +1,43 @@
+.btn.btn-add-segment {
+  width: 1.5em;
+  height: 1.5em;
+  line-height: 1.5em;
+  font-size: 1em;
+  text-align: center;
+  padding: 0;
+  position: absolute;
+  bottom: -0.75em;
+  left: -0.75em;
+  z-index: 99;
+  color: white;
+  background-color: #b5eec3;
+  border-radius: 2em;
+
+  &:hover {
+    background-color: #9dedae;
+  }
+
+  &.remove {
+    background-color: #f3adb5;
+
+    &:hover {
+      background-color: #f4959d;
+    }
+  }
+}
+
+.row:first-child .btn.btn-add-segment:first-child {
+  bottom: auto;
+  top: -0.75em;
+}
+
+// In the parallel view src+tgt, the first row is just text header "Source" and "Target"
+.src.tgt .row:nth-child(2) .btn.btn-add-segment:first-child {
+  bottom: auto;
+  top: -0.75em;
+}
+
+.btn.btn-add-segment.remove {
+  top: calc(50% - 0.75em) !important;
+  bottom: auto !important;
+}

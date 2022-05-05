@@ -1,6 +1,5 @@
 .segment {
   font-size: 1.2rem;
-  pointer-events: none;
   position: relative;
   display: flex;
   align-items: flex-start;
@@ -11,18 +10,13 @@
     align-items: center;
     justify-content: flex-start;
     flex-wrap: wrap;
-    pointer-events: none;
-
-    * {
-      pointer-events: auto;
-    }
   }
 
   .segment-hover-cursor {
     display: none;
     position: absolute;
     top: 0;
-    transform: translateY(-0.15em);
+    transform: translateY(-0.37em);
     height: 2.3em;
     width: 1px;
     background: black;
@@ -39,16 +33,20 @@
   font-weight: 700;
   margin-right: 1ch;
   padding: 0.25em 0;
+  pointer-events: none;
 }
 
 .token {
   display: inline-block;
   cursor: text;
+  padding: 0.2em 0.4em;
 
   &:not(.is-space) {
-    background: #fff3cd;
+    background: #fff8e1;
+    border: 1px solid #ece1be;
+    border-radius: 3px;
 
-    /* Styling for tokenized tokens within single word */
+    // Styling for tokenized tokens within single word
     + .token:not(.is-space) {
       margin-left: 4px;
       position: relative;
@@ -61,27 +59,13 @@
         position: absolute;
         left: -4px;
         top: 0;
-
-        /* For now, let's just not style this -- so in fact the pseudo element can be removed */
-        // border-top: 4px solid #fff3cd;
-        // border-bottom: 4px solid #fff3cd;
       }
     }
 
-    /* Space within a "token", when it is allowed */
+    // Space within a "token", when it is allowed
     .char.is-space {
       padding: 0 0.5ch;
       cursor: text;
-    }
-
-    .char {
-      &:first-child {
-        padding-left: 0.5em;
-      }
-
-      &:last-child {
-        padding-right: 0.5em;
-      }
     }
   }
 
@@ -93,17 +77,16 @@
   }
 
   &.has-punct {
-    box-shadow: 0 1px #e87e64;
+    box-shadow: 0 1px #edb4b9;
   }
 }
 
 .char {
   display: inline-block;
-  padding: 0.25em 0;
 
   &.is-punct {
     font-weight: 700;
-    color: #e87e64;
+    color: #e94686;
   }
 
   &.is-space {
