@@ -1,33 +1,38 @@
-import '../styles/project.scss';
-
 import {Outlet, useParams} from 'react-router-dom';
-import {getProject} from '../data';
+
+import React, {useEffect, useState} from 'react';
+import {getProjectTextNames} from '../data';
 import {LinkContainer} from 'react-router-bootstrap';
 import {Nav} from 'react-bootstrap';
-import React from 'react';
 
 export default function Project() {
   const params = useParams();
-  const project = getProject(params.projectName, params.textId);
+  const [textNames, setTextNames] = useState(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const textNames = await getProjectTextNames(params.projectName, params.textId);
+      console.log(textNames);
+      setTextNames(textNames);
+    };
+
+    fetchData();
+  }, [params]);
+
   return (
-    <main>
-      {project ?
-      <React.Fragment>
-        <h2><span>Project:</span> {project.name}</h2>
-        <Nav className="text-nav" as="nav">
-          {
-            project.texts.map((text) =>
-              <Nav.Item key={text.name}>
-                <LinkContainer to={`/projects/${params.projectName}/${text.name}`} key={`${text.name}`}>
-                  <Nav.Link>{`${text.name}`}</Nav.Link>
-                </LinkContainer>
-              </Nav.Item>
-            )}
-        </Nav>
-        <Outlet/>
-      </React.Fragment> :
-      <h2>Project {params.projectName} not found!</h2>
-      }
-    </main>
+    <React.Fragment>
+      <h2>Project: <span>{params.projectName}</span></h2>
+      <Nav className="text-nav" as="nav">
+        {
+          textNames && textNames.length && textNames.map((text) =>
+            <Nav.Item key={text}>
+              <LinkContainer to={`/projects/${params.projectName}/${text}`} key={`${text}`}>
+                <Nav.Link>{`${text}`}</Nav.Link>
+              </LinkContainer>
+            </Nav.Item>
+          )}
+      </Nav>
+      <Outlet/>
+    </React.Fragment>
   );
 }

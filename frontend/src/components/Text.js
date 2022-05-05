@@ -1,6 +1,6 @@
 import '../styles/text.scss';
 
-import {Alert, Button, ButtonGroup, Col, Container, Nav, Row, Tab, ToggleButton, ToggleButtonGroup} from 'react-bootstrap';
+import {Button, ButtonGroup, Col, Container, Nav, Row, Tab, ToggleButton, ToggleButtonGroup} from 'react-bootstrap';
 
 import {cloneDeep, zip} from 'lodash';
 import React, {Component} from 'react';
@@ -8,18 +8,18 @@ import React, {Component} from 'react';
 import {AddOrRemoveBtn} from './SegmentButton';
 import {getText} from '../data';
 import Segment from './Segment';
+import {textURL} from '../constants';
 import {withRouter} from '../utils';
 
 class Text extends Component {
   constructor(props) {
     super(props);
     this.ghostCursorEl = React.createRef();
-    const text = getText(this.props.router.params.projectName, this.props.router.params.textName);
     this.state = {
-      text: text,
+      text: {},
       tool: 'tokenize',
       historyIdx: 0,
-      history: [cloneDeep(text.translations)],
+      history: [],
     };
 
     this.onTokenize = this.onTokenize.bind(this);
@@ -267,7 +267,6 @@ class Text extends Component {
     const nTranslations = allTranslations.length;
     const tokens = side === 'src' ? translation.srcTokens : translation.tgtTokens;
     const otherTokens = side === 'src' ? translation.tgtTokens : translation.srcTokens;
-    const otherSide = side === 'src' ? 'tgt' : 'src';
     // Only add remove button if this cell is empty and if the last cell of the other side is empty
     const shouldHaveRemoveBtn = !tokens.length && !(translationId === nTranslations-1 && otherTokens.length);
     return <Col>
@@ -285,6 +284,30 @@ class Text extends Component {
     </Col>;
   }
 
+  componentDidMount() {
+    const url = textURL(this.props.router.params.projectName, this.props.router.params.textName);
+    fetch(url).then((response) => {
+      if (response.ok) {
+        response.json().then((data) => {
+          this.setState((prevState) => {
+            return {
+              ...prevState,
+              text: data,
+              history: [cloneDeep(data.translations)],
+            };
+          });
+        });
+      } else {
+        response.text().then((text) => {
+          throw Error(text);
+        });
+      }
+    },
+    ).catch((errStr) => {
+      this.setState({projects: [], errorMsg: String(errStr) + `: ${url}`});
+    });
+  }
+
   render() {
     const srcCols = this.state.text.hasSrc && this.state.text.translations.map((translation, translationId) => this.createCol(translation, translationId, 'src'));
     const tgtCols = this.state.text.hasTgt && this.state.text.translations.map((translation, translationId) => this.createCol(translation, translationId, 'tgt'));
@@ -294,20 +317,6 @@ class Text extends Component {
       <div id="text-wrapper" className={this.state.tool}>
         {this.state.text ?
         <Tab.Container defaultActiveKey="srctgt">
-          <header>
-            <h3><span>Text:</span> {this.state.text.name}</h3>
-            <Nav variant="pills" className="text-type-nav" as="nav">
-              {this.state.text.hasSrc && <Nav.Item>
-                <Nav.Link eventKey="src" as="button">source</Nav.Link>
-              </Nav.Item>}
-              {this.state.text.hasTgt && <Nav.Item>
-                <Nav.Link eventKey="tgt" as="button">target</Nav.Link>
-              </Nav.Item>}
-              {this.state.text.hasSrc && this.state.text.hasTgt && <Nav.Item>
-                <Nav.Link eventKey="srctgt" as="button">both</Nav.Link>
-              </Nav.Item>}
-            </Nav>
-          </header>
           <aside className="text-tool-controls">
             <ButtonGroup>
               <Button key="0" id="tool-btn-history-undo" value="undo" variant="info" onClick={(evt) => this.undoOrRedo(evt.currentTarget.value)} disabled={(this.state.history.length === 1) || (this.state.history.length-1 <= this.state.historyIdx)}>Undo</Button>
@@ -319,7 +328,18 @@ class Text extends Component {
               <ToggleButton key="1" type="radio" id="tool-btn-segment-up" value="segment-up" variant="primary">Segment &uarr;</ToggleButton>
               <ToggleButton key="2" type="radio" id="tool-btn-segment-down" value="segment-down" variant="primary">Segment &darr;</ToggleButton>
             </ToggleButtonGroup>
-            <Alert key={0} variant="danger" className={this.state.warningMsg ? 'active' : ''}>{this.state.warningMsg}</Alert>
+
+            <Nav variant="pills" className="text-type-nav" as="nav">
+              {this.state.text.hasSrc && <Nav.Item>
+                <Nav.Link eventKey="src" as="button">source</Nav.Link>
+              </Nav.Item>}
+              {this.state.text.hasTgt && <Nav.Item>
+                <Nav.Link eventKey="tgt" as="button">target</Nav.Link>
+              </Nav.Item>}
+              {this.state.text.hasSrc && this.state.text.hasTgt && <Nav.Item>
+                <Nav.Link eventKey="srctgt" as="button">both</Nav.Link>
+              </Nav.Item>}
+            </Nav>
           </aside>
 
           <Tab.Content>

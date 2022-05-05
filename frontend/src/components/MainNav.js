@@ -20,9 +20,7 @@ export default function MainNav() {
   return (
     <Navbar>
       <Container>
-        <LinkContainer to="/">
-          <Navbar.Brand>Mantis</Navbar.Brand>
-        </LinkContainer>
+        <Navbar.Brand>Mantis<sub>alpha</sub></Navbar.Brand>
         <Navbar.Toggle aria-controls="basic-navbar-nav" />
         <Navbar.Collapse id="basic-navbar-nav" className="justify-content-end">
           <Nav className="justify-content-center" activeKey={useActiveKey()}>
