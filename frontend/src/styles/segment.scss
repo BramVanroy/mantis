@@ -33,17 +33,20 @@
   font-weight: 700;
   margin-right: 1ch;
   padding: 0.25em 0;
+  pointer-events: none;
 }
 
 .token {
   display: inline-block;
   cursor: text;
-  padding: 0.25em 0.5em;
+  padding: 0.2em 0.4em;
 
   &:not(.is-space) {
-    background: #fff3cd;
+    background: #fff8e1;
+    border: 1px solid #ece1be;
+    border-radius: 3px;
 
-    /* Styling for tokenized tokens within single word */
+    // Styling for tokenized tokens within single word
     + .token:not(.is-space) {
       margin-left: 4px;
       position: relative;
@@ -56,14 +59,10 @@
         position: absolute;
         left: -4px;
         top: 0;
-
-        /* For now, let's just not style this -- so in fact the pseudo element can be removed */
-        // border-top: 4px solid #fff3cd;
-        // border-bottom: 4px solid #fff3cd;
       }
     }
 
-    /* Space within a "token", when it is allowed */
+    // Space within a "token", when it is allowed
     .char.is-space {
       padding: 0 0.5ch;
       cursor: text;
@@ -78,7 +77,7 @@
   }
 
   &.has-punct {
-    box-shadow: 0 1px #e87e64;
+    box-shadow: 0 1px #edb4b9;
   }
 }
 
@@ -87,7 +86,7 @@
 
   &.is-punct {
     font-weight: 700;
-    color: #e87e64;
+    color: #e94686;
   }
 
   &.is-space {

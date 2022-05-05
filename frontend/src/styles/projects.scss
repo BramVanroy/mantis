@@ -1,0 +1,25 @@
+.project-nav {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+
+  .nav-item {
+    background: #fff8e1;
+    border: 1px solid #ece1be;
+    border-radius: 3px;
+    width: auto;
+    text-align: center;
+
+    a {
+      border: 0 none;
+    }
+  }
+}
+
+.text-nav {
+  margin-bottom: 1rem;
+
+  .nav-item a {
+    padding: 0.25em;
+  }
+}

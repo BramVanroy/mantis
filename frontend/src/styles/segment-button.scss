@@ -1,14 +1,29 @@
 .btn.btn-add-segment {
   width: 1.5em;
   height: 1.5em;
-  line-height: 1em;
+  line-height: 1.5em;
   font-size: 1em;
   text-align: center;
-  padding: 0.15em;
+  padding: 0;
   position: absolute;
   bottom: -0.75em;
   left: -0.75em;
   z-index: 99;
+  color: white;
+  background-color: #b5eec3;
+  border-radius: 2em;
+
+  &:hover {
+    background-color: #9dedae;
+  }
+
+  &.remove {
+    background-color: #f3adb5;
+
+    &:hover {
+      background-color: #f4959d;
+    }
+  }
 }
 
 .row:first-child .btn.btn-add-segment:first-child {
