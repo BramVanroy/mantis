@@ -1,6 +1,7 @@
 run-backend.ps
 data.js
 **/TODO*
+backend/data
 
 # ignore compiled styles
 *.css
